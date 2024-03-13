@@ -1,0 +1,2728 @@
+{
+     "openapi":"3.0.1",
+     "info":{
+        "title":"API Reference",
+        "description":"#### Introduction\nThe EdgeReg API is a modern, self-documenting API that follows REST principles. We use predictable, resource-oriented URLs, and use HTTP response codes to indicate API errors. We use built-in HTTP features, like HTTP authentication and HTTP verbs, which are understood by off-the-shelf HTTP clients. JSON is returned by all API responses, including errors.\n\n#### Authentication\nMaking authenticated requests requires an API token, which can be obtained by contacting your project manager.  Authentication to the API is performed via HTTP Basic Auth. Provide your API key as the basic auth username value. You do not need to provide a password. An example would be as follows:\n\n<code>curl https://api.eventrebels.com/events -u AQoYiyJFvBiI2HlWFH4olfQ2:</code>\n\nThis documentation includes the ability to test all API endpoints from the ui.  Enter your API token into the input field at the top-left of the left-hand navigation menu, and it will allow you to begin authenticating requests.  Each endpoint will have a \"Try\" button and input fields to allow you to make a request.  These calls will return live data.\n\n",
+        "termsOfService":"https://api.eventrebels.com/er/General/Terms.jsp",
+        "version":"v2.0"
+     },
+     "servers":[
+        {
+           "url":"https://api.eventrebels.com"
+        }
+     ],
+     "security":[
+        {
+           "basicAuth":[
+              
+           ]
+        }
+     ],
+     "tags":[
+        {
+           "name":"User Defined Fields",
+           "description":"A User-Defined Field, or \"UDF\", is a custom field that has been set up for an event. "
+        },
+        {
+           "name":"Billing Contacts",
+           "description":"The Billing Contact is the person responsible for the purchase of one or more registrants."
+        },
+        {
+           "name":"Events",
+           "description":"An event represents a conference, trade show or other type of meeting that people can attend.  All other objects of the API are sub-objects of an event.  Events are also referred to as \"Activities\"."
+        },
+        {
+           "name":"Fees",
+           "description":"A fee is a ticket that is sold and associated with an individual registrant. Every registrant will have exactly one Registration Fee, but may also have zero or more Option Fees."
+        },
+        {
+           "name":"Schedule",
+           "description":"This is an object representing the conference schedule.  The schedule consists of multiple timeslots, each of which can contain multiple workshops, that represent different types of sessions that a registrant can attend."
+        },
+        {
+           "name":"Webhooks",
+           "description":"EventRebels supports webhooks for many of our internal system events.  Our webhooks allows customers to be notified of changes without having to poll our system periodically.  This is accomplished by the customer sending a POST request to <code>/hooks</code> requesting to subscribe to a particular event at a target URL.  Every time the event happens, we send the relevant data to the target URL. Refer to schema definitions starting with \"Webhook Event\" for the definition of the event payloads."
+        },
+        {
+           "name":"Transactions",
+           "description":"A transaction is a purchase or payment that corresponds with a registrant.  Each transaction can contain line items of registration or option fees that belong to the associated transaction."
+        },
+        {
+           "name":"Registration Cancellations",
+           "description":"Cancellations are people who have cancelled their registration and are no longer attending an event."
+        },
+        {
+           "name":"Registrants",
+           "description":"A registrant is an attendee at an event. The recommended approach for querying all registrant data for an event is to first use the <a href='#Registrants_getRegistrantIdsUsingGET'>Get all registrant ids</a> endpoint, then query each individual's registrant data using the <a href='#getRegistrantUsingGET'>Get a registrant</a> endpoint. <br><br>If there's a need for continuously pulling registrant data, the recommended approach is to use the \"registrationTimeAfter\" parameter, setting it to the timestamp of when you last made your previous API request, which result in only newly registered attendees being returned. "
+        }
+     ],
+     "paths":{
+        "/hooks":{
+           "get":{
+              "tags":[
+                 "Webhooks"
+              ],
+              "summary":"Get all subscriptions",
+              "description":"Get all active subscriptions on your account.",
+              "operationId":"getAll",
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "application/json":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/Subscription"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           },
+           "post":{
+              "tags":[
+                 "Webhooks"
+              ],
+              "summary":"Create a subscription",
+              "description":"Create a subscription for your account.",
+              "operationId":"subscribe",
+              "requestBody":{
+                 "content":{
+                    "application/json":{
+                       "schema":{
+                          "$ref":"#/components/schemas/SubscriptionCreate"
+                       }
+                    }
+                 },
+                 "required":true
+              },
+              "responses":{
+                 "201":{
+                    "description":"Created",
+                    "content":{
+                       "application/json":{
+                          "schema":{
+                             "$ref":"#/components/schemas/SubscriptionResult"
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events":{
+           "get":{
+              "tags":[
+                 "Events"
+              ],
+              "summary":"Get all events",
+              "description":"Retrieve all events associated with your account.",
+              "operationId":"findByFirmId",
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/Meeting"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{id}":{
+           "get":{
+              "tags":[
+                 "Events"
+              ],
+              "summary":"Get an event",
+              "description":"Retrieves an event by its <code>id</code>.",
+              "operationId":"get",
+              "parameters":[
+                 {
+                    "name":"id",
+                    "in":"path",
+                    "description":"The identifier of the event to retrieve",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "$ref":"#/components/schemas/Meeting"
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/udfs":{
+           "get":{
+              "tags":[
+                 "User Defined Fields"
+              ],
+              "summary":"Get all udfs",
+              "description":"Retrieves all udfs for an event.",
+              "operationId":"findByActivityId",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/UDFView"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/udfs/{udfId}":{
+           "get":{
+              "tags":[
+                 "User Defined Fields"
+              ],
+              "summary":"Get a udf",
+              "description":"Retrieves a UDF by its <code>id</code>.",
+              "operationId":"get_1",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"udfId",
+                    "in":"path",
+                    "description":"The identifier of the udf",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "$ref":"#/components/schemas/UDFView"
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/transactions":{
+           "get":{
+              "tags":[
+                 "Transactions"
+              ],
+              "summary":"Get all transactions",
+              "description":"Retrieves all transactions for an event.",
+              "operationId":"getByActivityId",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/Transaction"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/transactions/{transactionId}":{
+           "get":{
+              "tags":[
+                 "Transactions"
+              ],
+              "summary":"Get a transaction",
+              "description":"Retrieves a transaction by its <code>id</code>.",
+              "operationId":"get_2",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"transactionId",
+                    "in":"path",
+                    "description":"The identifier of the transaction",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "$ref":"#/components/schemas/Transaction"
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/schedule":{
+           "get":{
+              "tags":[
+                 "Schedule"
+              ],
+              "summary":"Get the schedule",
+              "description":"Retrieves the entire schedule for an event.",
+              "operationId":"getSessions",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/Session"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/schedule/{sessionId}/workshops/{programItemId}":{
+           "get":{
+              "tags":[
+                 "Schedule"
+              ],
+              "summary":"Get a workshop",
+              "description":"Retrieves a workshop by its <code>id</code>.",
+              "operationId":"getWorkshop",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"sessionId",
+                    "in":"path",
+                    "description":"The identifier of the timeslot",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"programItemId",
+                    "in":"path",
+                    "description":"The identifier of the workshop",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "$ref":"#/components/schemas/SessionWorkshop"
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/schedule/{sessionId}/workshops/{programItemId}/scans":{
+           "get":{
+              "tags":[
+                 "Schedule"
+              ],
+              "summary":"Get a workshop's scans",
+              "description":"Retrieves all scans for the provided workshop",
+              "operationId":"getWorkshopScans",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"sessionId",
+                    "in":"path",
+                    "description":"The identifier of the timeslot",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"programItemId",
+                    "in":"path",
+                    "description":"The identifier of the workshop",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/WorkshopScan"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/schedule/{sessionId}/workshops/{programItemId}/attendance":{
+           "get":{
+              "tags":[
+                 "Schedule"
+              ],
+              "summary":"Get a workshop's attendance",
+              "description":"Retrieves all registrants who are marked as attended for the provided workshop",
+              "operationId":"getWorkshopAttendance",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"sessionId",
+                    "in":"path",
+                    "description":"The identifier of the timeslot",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"programItemId",
+                    "in":"path",
+                    "description":"The identifier of the workshop",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/WorkshopAttendance"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/schedule/timeslot/{sessionId}":{
+           "get":{
+              "tags":[
+                 "Schedule"
+              ],
+              "summary":"Get a timeslot",
+              "description":"Retrieves a timeslot by its <code>id</code>.",
+              "operationId":"getSession",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"sessionId",
+                    "in":"path",
+                    "description":"The identifier of the timeslot",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "$ref":"#/components/schemas/Session"
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/schedule/scans":{
+           "get":{
+              "tags":[
+                 "Schedule"
+              ],
+              "summary":"Get all workshop scans",
+              "description":"Retrieves all scans for the event",
+              "operationId":"getScans",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/WorkshopScan"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/registrants/{registrantId}/workshopScans":{
+           "get":{
+              "tags":[
+                 "Registrants"
+              ],
+              "summary":"Get a registrant's workshop scans",
+              "description":"Retrieves all workshop scans for the provided registrant",
+              "operationId":"getWorkshopScans_1",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"registrantId",
+                    "in":"path",
+                    "description":"The identifier of the registrant",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/WorkshopScan"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/registrants/{registrantId}/workshopAttendance":{
+           "get":{
+              "tags":[
+                 "Registrants"
+              ],
+              "summary":"Get a registrant's workshop attendance",
+              "description":"Retrieves all workshops that the provided registrant is marked as attended for",
+              "operationId":"getWorkshopAttendance_1",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"registrantId",
+                    "in":"path",
+                    "description":"The identifier of the registrant",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/WorkshopAttendance"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/registrants/{registrantId}/purchases":{
+           "get":{
+              "tags":[
+                 "Registrants"
+              ],
+              "summary":"Get a registrant's purchases",
+              "description":"Retrieve all the purchases associated with a registrant. Cancelled purchases are not retrieved.  This shows what items the registrant has purchased and the base price of the item.  This does not provide any discounts applied or what the registrant has actually paid.  The transactions endpoint should be used for all forms of reconciliation.",
+              "operationId":"getPurchases",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"registrantId",
+                    "in":"path",
+                    "description":"The identifier of the registrant",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/TransactionLineItem"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/registrants/{id}":{
+           "get":{
+              "tags":[
+                 "Registrants"
+              ],
+              "summary":"Get a registrant",
+              "description":"Retrieves a registrant by their <code>id</code>.",
+              "operationId":"getRegistrant",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"id",
+                    "in":"path",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "$ref":"#/components/schemas/RegistrantPersonInformation"
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/registrantIds":{
+           "get":{
+              "tags":[
+                 "Registrants"
+              ],
+              "summary":"Get all registrant ids",
+              "description":"Retrieves all registrant ids for an event.",
+              "operationId":"getRegistrantIds",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event.",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"firstName",
+                    "in":"query",
+                    "description":"Filter the results by first name.",
+                    "required":false,
+                    "schema":{
+                       "type":"string"
+                    }
+                 },
+                 {
+                    "name":"email",
+                    "in":"query",
+                    "description":"Filter the results by email.",
+                    "required":false,
+                    "schema":{
+                       "type":"string"
+                    }
+                 },
+                 {
+                    "name":"lastName",
+                    "in":"query",
+                    "description":"Filter the results by last name.",
+                    "required":false,
+                    "schema":{
+                       "type":"string"
+                    }
+                 },
+                 {
+                    "name":"registrationStatus",
+                    "in":"query",
+                    "description":"Filter the results to specific registration states.",
+                    "required":false,
+                    "schema":{
+                       "type":"array",
+                       "items":{
+                          "type":"string",
+                          "enum":[
+                             "REGISTERED",
+                             "BAD_CHECK",
+                             "BILL_LATER"
+                          ]
+                       }
+                    }
+                 },
+                 {
+                    "name":"registrationTimeAfter",
+                    "in":"query",
+                    "description":"Filter the results to include only registrations after this timestamp. Provided timestamp should be in milliseconds.",
+                    "required":false,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int64"
+                    }
+                 },
+                 {
+                    "name":"registrationTimeBefore",
+                    "in":"query",
+                    "description":"Filter the results to include only registrations before this timestamp. Provided timestamp should be in milliseconds.",
+                    "required":false,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int64"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "type":"integer",
+                                "format":"int32"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/registrantCancellations":{
+           "get":{
+              "tags":[
+                 "Registration Cancellations"
+              ],
+              "summary":"Get all Registrant cancellations",
+              "description":"Retrieves all registrants that have cancelled for an event.",
+              "operationId":"getRegistrantIds_1",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event.",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"cancellationTimeAfter",
+                    "in":"query",
+                    "description":"Filter the results to include only registrations that were cancelled after the provided timestamp. Provided timestamp should be in milliseconds.",
+                    "required":false,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int64"
+                    }
+                 },
+                 {
+                    "name":"cancellationTimeBefore",
+                    "in":"query",
+                    "description":"Filter the results to include only registrations that were cancelled before the provided timestamp. Provided timestamp should be in milliseconds.",
+                    "required":false,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int64"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/RegistrantCancellation"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/fees":{
+           "get":{
+              "tags":[
+                 "Fees"
+              ],
+              "summary":"Get all fees",
+              "description":"Retrieves all fees for an event.",
+              "operationId":"findByActivityId_1",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/Fee"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/fees/{feeId}":{
+           "get":{
+              "tags":[
+                 "Fees"
+              ],
+              "summary":"Get a fee",
+              "description":"Retrieves a fee by its <code>id</code>.",
+              "operationId":"get_3",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 },
+                 {
+                    "name":"feeId",
+                    "in":"path",
+                    "description":"The identifier of the fee",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "$ref":"#/components/schemas/Fee"
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/billing_contacts":{
+           "get":{
+              "tags":[
+                 "Billing Contacts"
+              ],
+              "summary":"Get all billing contacts",
+              "description":"Retrieves all billing contacts for an event.",
+              "operationId":"findByActivityId_2",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    },
+                    "example":33221
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "type":"array",
+                             "items":{
+                                "$ref":"#/components/schemas/BillingInformation"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/events/{activityId}/billing_contacts/{billingId}":{
+           "get":{
+              "tags":[
+                 "Billing Contacts"
+              ],
+              "summary":"Get a billing contact",
+              "description":"Retrieves a billing contact by their <code>id</code>.",
+              "operationId":"get_4",
+              "parameters":[
+                 {
+                    "name":"activityId",
+                    "in":"path",
+                    "description":"The identifier of the event",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    },
+                    "example":33221
+                 },
+                 {
+                    "name":"billingId",
+                    "in":"path",
+                    "description":"The identifier of the billing contact",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    },
+                    "example":33221
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK",
+                    "content":{
+                       "*/*":{
+                          "schema":{
+                             "$ref":"#/components/schemas/BillingInformation"
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        },
+        "/hooks/{id}":{
+           "delete":{
+              "tags":[
+                 "Webhooks"
+              ],
+              "summary":"Delete a subscription",
+              "description":"Delete a subscription by its identifier.",
+              "operationId":"unsubscribe",
+              "parameters":[
+                 {
+                    "name":"id",
+                    "in":"path",
+                    "required":true,
+                    "schema":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              ],
+              "responses":{
+                 "200":{
+                    "description":"OK"
+                 }
+              }
+           }
+        }
+     },
+     "components":{
+        "schemas":{
+           "SubscriptionCreate":{
+              "required":[
+                 "event",
+                 "target_url"
+              ],
+              "type":"object",
+              "properties":{
+                 "target_url":{
+                    "type":"string",
+                    "description":"The url that the subscription will post data to",
+                    "example":"https://www.yourwebsite.com/api/receiveData"
+                 },
+                 "event":{
+                    "type":"string",
+                    "example":"REGISTRATION_PURCHASED",
+                    "enum":[
+                       "MEETING_CREATED",
+                       "REGISTRATION_PURCHASED",
+                       "OPTION_PURCHASE"
+                    ]
+                 },
+                 "filters":{
+                    "type":"object",
+                    "additionalProperties":{
+                       "type":"string",
+                       "description":"Allows you to restrict events to only trigger when matching certain filters. The filters work by comparing the filter name and value to the payload object and only firing if there is a match. For example {\"activityId\": 1} can be set to restrict event notifications to only be sent when the event occurs for a specific activity. Refer to schema definitions starting with \"Webhook Event\" for the definition of the event payloads.",
+                       "example":"{\"activityId\":1}"
+                    },
+                    "description":"Allows you to restrict events to only trigger when matching certain filters. The filters work by comparing the filter name and value to the payload object and only firing if there is a match. For example {\"activityId\": 1} can be set to restrict event notifications to only be sent when the event occurs for a specific activity. Refer to schema definitions starting with \"Webhook Event\" for the definition of the event payloads.",
+                    "example":{
+                       "activityId":1
+                    }
+                 }
+              }
+           },
+           "SubscriptionResult":{
+              "required":[
+                 "id"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The identifier of the subscription",
+                    "format":"int32",
+                    "example":1
+                 }
+              }
+           },
+           "Subscription":{
+              "type":"object",
+              "properties":{
+                 "target_url":{
+                    "type":"string",
+                    "description":"The url that the subscription will post data to",
+                    "example":"http://www.yourwebsite.com/api/receiveData"
+                 },
+                 "event":{
+                    "type":"string",
+                    "example":"REGISTRATION_PURCHASED",
+                    "enum":[
+                       "MEETING_CREATED",
+                       "REGISTRATION_PURCHASED",
+                       "OPTION_PURCHASE",
+                       "MEETING_CREATED,REGISTRATION_PURCHASED,OPTION_PURCHASE"
+                    ]
+                 },
+                 "firmId":{
+                    "type":"integer",
+                    "description":"The firm that this event is tied to.",
+                    "format":"int32"
+                 },
+                 "filters":{
+                    "type":"object",
+                    "additionalProperties":{
+                       "type":"string",
+                       "description":"Restricts events to only trigger when matching certain filters. The filters work by comparing the filter name and value to the payload object and only firing if there is a match. For example {\"activityId\": 1} can be set to restrict event notifications to only be sent when the event occurs for a specific activity.",
+                       "example":"{\"activityId\":1}"
+                    },
+                    "description":"Restricts events to only trigger when matching certain filters. The filters work by comparing the filter name and value to the payload object and only firing if there is a match. For example {\"activityId\": 1} can be set to restrict event notifications to only be sent when the event occurs for a specific activity.",
+                    "example":{
+                       "activityId":1
+                    }
+                 },
+                 "id":{
+                    "type":"integer",
+                    "format":"int32"
+                 }
+              }
+           },
+           "Meeting":{
+              "required":[
+                 "id",
+                 "name",
+                 "token"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The event's identifier",
+                    "format":"int32",
+                    "example":10982
+                 },
+                 "name":{
+                    "type":"string",
+                    "description":"The name of the event",
+                    "example":"EventRebels Annual Conference 2017"
+                 },
+                 "subTitle":{
+                    "type":"string",
+                    "description":"The subtitle of the event",
+                    "example":"Reset & Rebalance for the Future"
+                 },
+                 "token":{
+                    "type":"string",
+                    "description":"A unique token representing the event",
+                    "example":"B74E2026F43A4491F1284BB38D96F440"
+                 },
+                 "dateStart":{
+                    "type":"string",
+                    "description":"The date that the event starts",
+                    "format":"date",
+                    "example":"2027-12-30"
+                 },
+                 "dateEnd":{
+                    "type":"string",
+                    "description":"The date that the event ends",
+                    "format":"date",
+                    "example":"2027-12-31"
+                 },
+                 "isArchived":{
+                    "type":"boolean",
+                    "description":"Whether the meeting has been marked as archived",
+                    "example":false
+                 }
+              }
+           },
+           "UDFChoiceListChoiceView":{
+              "required":[
+                 "id",
+                 "name"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"Identifier of the choice",
+                    "format":"int32",
+                    "example":777
+                 },
+                 "name":{
+                    "type":"string",
+                    "description":"Name of the choice",
+                    "example":"Yes"
+                 }
+              }
+           },
+           "UDFChoiceListView":{
+              "required":[
+                 "id"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"Identifier of the choice list",
+                    "format":"int32",
+                    "example":555
+                 },
+                 "data":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/UDFChoiceListChoiceView"
+                    }
+                 }
+              },
+              "description":"UDFs of type <code>DROP_DOWN_LIST</code> or <code>RADIO_BUTTON</code> contain a list of items that registrants can select a single description = from. "
+           },
+           "UDFView":{
+              "required":[
+                 "displayOrder",
+                 "id",
+                 "name",
+                 "prompt",
+                 "required",
+                 "type"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The udf's identifier",
+                    "format":"int32",
+                    "example":41234567
+                 },
+                 "name":{
+                    "type":"string",
+                    "description":"The name of the udf",
+                    "example":"Will you be attending the luncheon?"
+                 },
+                 "prompt":{
+                    "type":"string",
+                    "description":"How the udf will appear publicly",
+                    "example":"Will you be attending the luncheon?"
+                 },
+                 "type":{
+                    "type":"string",
+                    "description":"The type of udf",
+                    "example":"Choice Drop-Down List",
+                    "enum":[
+                       "INTEGER",
+                       "CURRENCY",
+                       "BOOLEAN",
+                       "TEXT",
+                       "PARAGRAPH",
+                       "RADIO_BUTTON",
+                       "DROP_DOWN_LIST",
+                       "SEPARATOR",
+                       "COMMENTS",
+                       "DATE",
+                       "GROUP_MULTIPICK",
+                       "GROUP_SINGLEPICK",
+                       "MESSAGE",
+                       "NOTE"
+                    ]
+                 },
+                 "displayOrder":{
+                    "type":"integer",
+                    "description":"Used internally to order the udf with other fields",
+                    "format":"int32",
+                    "example":25
+                 },
+                 "list":{
+                    "$ref":"#/components/schemas/UDFChoiceListView"
+                 },
+                 "required":{
+                    "type":"boolean",
+                    "description":"Whether the udf is required on the form",
+                    "example":true
+                 }
+              }
+           },
+           "Transaction":{
+              "required":[
+                 "billingId",
+                 "id",
+                 "transactionSource",
+                 "transactionTime",
+                 "transactionType"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The transaction's identifier",
+                    "format":"int32",
+                    "example":777
+                 },
+                 "billingId":{
+                    "type":"integer",
+                    "description":"The identifier of the billing contact that this transaction belongs to",
+                    "format":"int32",
+                    "example":81234567
+                 },
+                 "registrantId":{
+                    "type":"integer",
+                    "description":"The identifier of the registrant. For transaction types that contain line items, the registrantId must be obtained from the line items directly. ",
+                    "format":"int32",
+                    "example":3184972
+                 },
+                 "transactionType":{
+                    "type":"string",
+                    "description":"The type of transaction",
+                    "example":"Registration (Purchase)",
+                    "enum":[
+                       "REGISTRATION",
+                       "REGISTRATION_CONFIRMED",
+                       "REGISTRATION_ABANDONED",
+                       "VERISIGN_PAYMENT",
+                       "VERISIGN_FAILED",
+                       "REFUND_PROCESSING_FEE",
+                       "CHECK_PAYMENT",
+                       "CHECK_RETURNED",
+                       "CASH_PAYMENT",
+                       "MONEY_ORDER_PAYMENT",
+                       "MANUAL_CREDIT_CARD_PAYMENT",
+                       "ADDITIONAL_PURCHASE",
+                       "PURCHASE_CONFIRMED",
+                       "PURCHASE_ABANDONED",
+                       "REGISTRATION_CANCELLATION",
+                       "CANCELLATION_COMPLETED",
+                       "VERISIGN_CREDIT",
+                       "CHECK_CREDIT",
+                       "CASH_CREDIT",
+                       "MONEY_ORDER_CREDIT",
+                       "MANUAL_CREDIT_CARD_CREDIT",
+                       "VOID",
+                       "REGINFO_CHANGED",
+                       "DISCOUNT",
+                       "FUTURE_CREDIT",
+                       "ECHECK_PAYMENT",
+                       "ECHECK_FAILURE",
+                       "WIRE_TRANSFER_PAYMENT",
+                       "ECHECK_CREDIT",
+                       "WIRE_TRANSFER_CREDIT",
+                       "FUTURE_CREDIT_USED",
+                       "EXCHANGE_RATE_DEBIT",
+                       "EXCHANGE_RATE_CREDIT"
+                    ]
+                 },
+                 "description":{
+                    "type":"string",
+                    "description":"An added description by an administrator to provide additional information about the transaction",
+                    "example":"81234567"
+                 },
+                 "paymentMethod":{
+                    "type":"string",
+                    "description":"How the transaction was paid if it's a payment transaction",
+                    "example":"CHECK",
+                    "enum":[
+                       "CREDIT_CARD",
+                       "CHECK",
+                       "CASH",
+                       "MONEY_ORDER",
+                       "LATER",
+                       "CREDIT_CARD_OFFLINE",
+                       "COMPLIMENTARY",
+                       "PURCHASE_ORDER",
+                       "ECHECK",
+                       "WIRE_TRANSFER"
+                    ]
+                 },
+                 "invoiceNumber":{
+                    "type":"integer",
+                    "description":"An auto-incrementing number that increases for every unpaid registration per event, and is used to reference a particular purchase",
+                    "format":"int32",
+                    "example":17
+                 },
+                 "purchaseOrderNumber":{
+                    "type":"string",
+                    "description":"A number used to reference the purchase when the payment method is <code>PURCHASE_ORDER</code>",
+                    "example":"4"
+                 },
+                 "checkNumber":{
+                    "type":"string",
+                    "description":"The number of the check, only applicable when payment method is by <code>CHECK</code>",
+                    "example":"17A041"
+                 },
+                 "registrationMethod":{
+                    "type":"string",
+                    "description":"How the transaction was recorded",
+                    "example":"OTHER",
+                    "enum":[
+                       "FAX",
+                       "PHONE",
+                       "ON_LINE",
+                       "MAIL",
+                       "ON_SITE",
+                       "OTHER"
+                    ]
+                 },
+                 "transactionSource":{
+                    "type":"string",
+                    "description":"<code>Online</code> indicates the transaction was completed by a registrant through a form.  <code>Offline</code> indicates an administrator completed the transaction",
+                    "example":"Online",
+                    "enum":[
+                       "UNKNOWN",
+                       "ONLINE",
+                       "OFFLINE"
+                    ]
+                 },
+                 "transactionSourceUser":{
+                    "type":"string",
+                    "description":"If completed by an administrator, provides their email address",
+                    "example":"admin@eventrebels.com"
+                 },
+                 "transactionTime":{
+                    "type":"string",
+                    "description":"When the transaction occurred",
+                    "format":"date-time"
+                 },
+                 "price":{
+                    "type":"number",
+                    "description":"Represents a price such as how much was paid, or how much of a cost was incurred",
+                    "example":150
+                 },
+                 "lineItems":{
+                    "type":"array",
+                    "description":"Lists which fees the transaction included",
+                    "items":{
+                       "$ref":"#/components/schemas/TransactionLineItem"
+                    }
+                 }
+              }
+           },
+           "TransactionLineItem":{
+              "required":[
+                 "cancelled",
+                 "feeItemId",
+                 "id",
+                 "paid",
+                 "price",
+                 "quantity",
+                 "registrantId"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The line item's identifier",
+                    "format":"int32",
+                    "example":8412333
+                 },
+                 "feeItemId":{
+                    "type":"integer",
+                    "description":"The fee's identifier",
+                    "format":"int32",
+                    "example":555
+                 },
+                 "quantity":{
+                    "type":"integer",
+                    "description":"The number of tickets sold for this fee",
+                    "format":"int32",
+                    "example":2
+                 },
+                 "price":{
+                    "type":"number",
+                    "description":"The price corresponding to the fee purchased.  Does not reflect how much has actually been paid, only the description = of the item.",
+                    "example":150
+                 },
+                 "paid":{
+                    "type":"boolean",
+                    "description":"Whether the line item was paid for",
+                    "example":true
+                 },
+                 "cancelled":{
+                    "type":"boolean",
+                    "description":"Whether the line item was cancelled. A cancelled line item will not incur a cost"
+                 },
+                 "registrantId":{
+                    "type":"integer",
+                    "description":"The identifier of the registrant",
+                    "format":"int32"
+                 }
+              },
+              "description":"Lists which fees the transaction included"
+           },
+           "Session":{
+              "required":[
+                 "activityId",
+                 "id",
+                 "name",
+                 "prompt",
+                 "sessionType",
+                 "timeEnd",
+                 "timeStart"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The timeslot's identifier",
+                    "format":"int32",
+                    "example":849105
+                 },
+                 "activityId":{
+                    "type":"integer",
+                    "description":"The event's identifier",
+                    "format":"int32",
+                    "example":10982
+                 },
+                 "name":{
+                    "type":"string",
+                    "description":"Name used to reference the timeslot, typically used internally",
+                    "example":"Monday, 8:00 a.m. - 9:30 a.m."
+                 },
+                 "prompt":{
+                    "type":"string",
+                    "description":"Used to reference the timeslot publicly",
+                    "example":"Monday, 8:00 a.m. - 9:30 a.m."
+                 },
+                 "sessionType":{
+                    "type":"string",
+                    "enum":[
+                       "WORKSHOP",
+                       "GENERAL",
+                       "SEPARATOR",
+                       "COMMENT",
+                       "UDF",
+                       "COMBO",
+                       "CHILD"
+                    ]
+                 },
+                 "timeStart":{
+                    "type":"string",
+                    "format":"date-time"
+                 },
+                 "timeEnd":{
+                    "type":"string",
+                    "format":"date-time"
+                 },
+                 "workshops":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/SessionWorkshop"
+                    }
+                 }
+              }
+           },
+           "SessionWorkshop":{
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The workshop's identifier",
+                    "format":"int32",
+                    "example":41234567
+                 },
+                 "activityId":{
+                    "type":"integer",
+                    "description":"The event's identifier",
+                    "format":"int32",
+                    "example":10982
+                 },
+                 "name":{
+                    "type":"string",
+                    "description":"Name of the workshop, typically used to reference the workshop internally",
+                    "example":"Analytics - Benefits and Dangers"
+                 },
+                 "prompt":{
+                    "type":"string",
+                    "description":"Used to reference the workshop publicly",
+                    "example":"Analytics - Benefits and Dangers"
+                 },
+                 "itemCode":{
+                    "type":"string",
+                    "description":"A short code that is used to reference the workshop",
+                    "example":"A30"
+                 },
+                 "capacity":{
+                    "type":"integer",
+                    "description":"The maximum number of people that can register to attend",
+                    "format":"int32",
+                    "example":100
+                 },
+                 "track":{
+                    "type":"string",
+                    "description":"A way to group similar workshops across multiple timeslots",
+                    "example":"Analytics"
+                 },
+                 "room":{
+                    "type":"string",
+                    "description":"Where the workshop will be located",
+                    "example":"North Hall Room C"
+                 },
+                 "description":{
+                    "type":"string",
+                    "description":"Additional information describing the workshop",
+                    "example":"Please bring a calculator!"
+                 }
+              }
+           },
+           "WorkshopScan":{
+              "required":[
+                 "action",
+                 "activityId",
+                 "id",
+                 "programItemId",
+                 "registrantId",
+                 "scanMethod",
+                 "timeScanned",
+                 "workshopName"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The scan's identifier",
+                    "format":"int32",
+                    "example":4444
+                 },
+                 "activityId":{
+                    "type":"integer",
+                    "description":"The event's identifier",
+                    "format":"int32",
+                    "example":10982
+                 },
+                 "workshopName":{
+                    "type":"string",
+                    "description":"Name of the workshop, typically used to reference the workshop internally",
+                    "example":"Analytics - Benefits and Dangers"
+                 },
+                 "registrantId":{
+                    "type":"integer",
+                    "description":"The identifier of the registrant being scanned",
+                    "format":"int32",
+                    "example":12345678
+                 },
+                 "programItemId":{
+                    "type":"integer",
+                    "description":"The identifier of the workshop",
+                    "format":"int32",
+                    "example":3381798
+                 },
+                 "action":{
+                    "type":"string",
+                    "description":"The action of the scan",
+                    "example":"Entering"
+                 },
+                 "timeScanned":{
+                    "type":"string",
+                    "description":"The date/time of when the registrant was scanned (In UTC)",
+                    "format":"date-time"
+                 },
+                 "scanMethod":{
+                    "type":"string",
+                    "description":"The method of being scanned",
+                    "example":"FaceToFace"
+                 },
+                 "scannerRegistrantId":{
+                    "type":"integer",
+                    "description":"The registrant Id of the scanner (0 if the scanner was an administrator)",
+                    "format":"int32",
+                    "example":0
+                 }
+              }
+           },
+           "WorkshopAttendance":{
+              "required":[
+                 "activityId",
+                 "programItemId",
+                 "registrantId",
+                 "workshopName"
+              ],
+              "type":"object",
+              "properties":{
+                 "activityId":{
+                    "type":"integer",
+                    "description":"The identifier of the event",
+                    "format":"int32",
+                    "example":10982
+                 },
+                 "programItemId":{
+                    "type":"integer",
+                    "description":"The workshop's identifier",
+                    "format":"int32",
+                    "example":41234567
+                 },
+                 "registrantId":{
+                    "type":"integer",
+                    "description":"The registrant's identifier",
+                    "format":"int32",
+                    "example":31234568
+                 },
+                 "workshopName":{
+                    "type":"string",
+                    "description":"The name of the workshop",
+                    "example":"Analytics - Benefits and Dangers"
+                 }
+              }
+           },
+           "ConsentQuestion":{
+              "required":[
+                 "consentAccepted",
+                 "questionText"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"string",
+                    "writeOnly":true
+                 },
+                 "questionText":{
+                    "type":"string",
+                    "description":"Consent question text",
+                    "example":"Share my contact info"
+                 },
+                 "consentAccepted":{
+                    "type":"boolean",
+                    "description":"Response to consent questions",
+                    "example":true
+                 }
+              }
+           },
+           "RegistrantPersonInformation":{
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The registrant's identifier",
+                    "format":"int32",
+                    "example":12345678
+                 },
+                 "billingId":{
+                    "type":"string",
+                    "description":"The identifier of the billing contact who purchased this registrant",
+                    "example":"22224444"
+                 },
+                 "registrationTime":{
+                    "type":"string",
+                    "description":"The date and time that the registrant was purchased",
+                    "format":"date-time"
+                 },
+                 "memberId":{
+                    "type":"string",
+                    "description":"For account's that use ERPeople, indicates the registrant's membership ID",
+                    "example":"999"
+                 },
+                 "tableNumber":{
+                    "type":"string",
+                    "description":"For banquets with assigned seating, indicates which table the registrant has been assigned to",
+                    "example":"2"
+                 },
+                 "seatNumber":{
+                    "type":"string",
+                    "description":"For banquets with assigned seating, indicates which seat number the registrant has been assigned to",
+                    "example":"2"
+                 },
+                 "balanceDue":{
+                    "type":"number",
+                    "description":"How much money is owed by the billing record associated with this registrant.  This will include any outstanding balances for all registrants that belong to a group purchase.",
+                    "example":0
+                 },
+                 "confirmationId":{
+                    "type":"string",
+                    "description":"A unique confirmation code that allows the registrant to log back in",
+                    "example":"EQ7A-G38E-ZHMC-TLBK-H2RE-BQ6-EYW"
+                 },
+                 "registrationStatus":{
+                    "type":"string",
+                    "description":"Shows the registrant's current status",
+                    "example":"Registered",
+                    "enum":[
+                       "REGISTERED",
+                       "BAD_CHECK",
+                       "BILL_LATER"
+                    ]
+                 },
+                 "feeName":{
+                    "type":"string",
+                    "description":"Name of the main fee associated with this record",
+                    "example":"Main Conference"
+                 },
+                 "feePrice":{
+                    "type":"string",
+                    "description":"Price of the main fee associated with this record",
+                    "example":"100.0"
+                 },
+                 "feeBadgeDisplay":{
+                    "type":"string",
+                    "description":"Price of the main fee associated with this record",
+                    "example":"Main Conference"
+                 },
+                 "salutation":{
+                    "type":"string",
+                    "description":"Salutation of the Registrant",
+                    "example":"Mrs."
+                 },
+                 "firstName":{
+                    "type":"string",
+                    "description":"The registrant's first name",
+                    "example":"Jane"
+                 },
+                 "middleName":{
+                    "type":"string",
+                    "description":"The registrant's middle name",
+                    "example":"N."
+                 },
+                 "lastName":{
+                    "type":"string",
+                    "description":"The registrant's last name",
+                    "example":"Doe"
+                 },
+                 "suffix":{
+                    "type":"string",
+                    "description":"The registrant's suffix",
+                    "example":"Jr."
+                 },
+                 "pronouns":{
+                    "type":"string",
+                    "description":"The registrant's pronouns",
+                    "example":"He/Him/His"
+                 },
+                 "credentials":{
+                    "type":"string",
+                    "description":"The registrant's credentials",
+                    "example":"DDS."
+                 },
+                 "nameOnBadge":{
+                    "type":"string",
+                    "description":"Commonly used as a nickname to be used when printing badges",
+                    "example":"Janey"
+                 },
+                 "company":{
+                    "type":"string",
+                    "description":"Company of the registrant",
+                    "example":"EventRebels"
+                 },
+                 "title":{
+                    "type":"string",
+                    "description":"Title of the registrant",
+                    "example":"Dr."
+                 },
+                 "department":{
+                    "type":"string",
+                    "description":"Department that the registrant works at",
+                    "example":"Agriculture"
+                 },
+                 "phone":{
+                    "type":"string",
+                    "description":"Phone number of the registrant",
+                    "example":"(877) 883-1786 EXT 401"
+                 },
+                 "mobilePhoneNumber":{
+                    "type":"string",
+                    "description":"Mobile Phone number of the registrant",
+                    "example":"(877) 883-1786"
+                 },
+                 "fax":{
+                    "type":"string",
+                    "description":"Fax number of the registrant",
+                    "example":"(877) 883-1244"
+                 },
+                 "email":{
+                    "type":"string",
+                    "description":"Email address of the registrant",
+                    "example":"janedoe@eventrebels.com"
+                 },
+                 "address1":{
+                    "type":"string",
+                    "description":"Address 1 of the registrant",
+                    "example":"10 West Eager St."
+                 },
+                 "address2":{
+                    "type":"string",
+                    "description":"Address 2 of the registrant",
+                    "example":"Suite 200"
+                 },
+                 "city":{
+                    "type":"string",
+                    "description":"City in which the resident resides",
+                    "example":"Baltimore"
+                 },
+                 "state":{
+                    "type":"string",
+                    "description":"State in which the resident resides",
+                    "example":"MD"
+                 },
+                 "zipCode":{
+                    "type":"string",
+                    "description":"Zip Code of the registrant",
+                    "example":"21201"
+                 },
+                 "country":{
+                    "type":"string",
+                    "description":"Country of the registrant",
+                    "example":"USA"
+                 },
+                 "facebookUrl":{
+                    "type":"string",
+                    "description":"The url of the registrant's Facebook",
+                    "example":"https://www.facebook.com/EventRebels/"
+                 },
+                 "linkedInUrl":{
+                    "type":"string",
+                    "description":"The LinkedIn url of the registrant",
+                    "example":"https://www.linkedin.com/company/eventrebels"
+                 },
+                 "twitterHandle":{
+                    "type":"string",
+                    "description":"The registrant's Twitter handle",
+                    "example":"@eventrebels"
+                 },
+                 "attended":{
+                    "type":"boolean",
+                    "description":"Whether the registrant has been tracked as having attended the event",
+                    "example":true
+                 },
+                 "publicToken":{
+                    "type":"string",
+                    "description":"A token used throughout the system to do various tasks, commonly used in tandem with QR codes for session tracking or lead retrieval",
+                    "example":"W3QGR3H67PGU5EDZJUHUWBXBZN"
+                 },
+                 "membershipInfoUpdated":{
+                    "type":"boolean",
+                    "description":"Whether the user's stored membership information is updated when their registration information changes",
+                    "example":true
+                 },
+                 "photo":{
+                    "type":"string",
+                    "description":"The profile photo of the user",
+                    "example":"https://imgsvr.eventrebels.com/ERImg/01/09/82/46edc8fb-13fe-4117-839e-f7032ce2e4c9-1-kc.jpg"
+                 },
+                 "ccEmails":{
+                    "type":"array",
+                    "description":"Any emails that will be cc'd on all correspondence with the registrant",
+                    "example":[
+                       "JohnDoe@eventrebels.com",
+                       "JaneDoe@eventrebelsc.om"
+                    ],
+                    "items":{
+                       "type":"string",
+                       "description":"Any emails that will be cc'd on all correspondence with the registrant",
+                       "example":"[\"JohnDoe@eventrebels.com\",\"JaneDoe@eventrebelsc.om\"]"
+                    }
+                 },
+                 "udfs":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/RegistrantUDF"
+                    }
+                 },
+                 "consentQuestions":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/ConsentQuestion"
+                    }
+                 },
+                 "workshops":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/Workshop"
+                    }
+                 }
+              }
+           },
+           "RegistrantUDF":{
+              "required":[
+                 "id",
+                 "name",
+                 "prompt"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"Identifier representing the UDF",
+                    "format":"int32",
+                    "example":782556
+                 },
+                 "name":{
+                    "type":"string",
+                    "description":"Internal name used to reference the UDF",
+                    "example":"FavoriteColor"
+                 },
+                 "prompt":{
+                    "type":"string",
+                    "description":"Text that displays when the UDF appears on a form",
+                    "example":"What is your favorite color?"
+                 },
+                 "value":{
+                    "type":"string",
+                    "description":"Text that displays when the UDF appears on a form",
+                    "example":"Red"
+                 },
+                 "choiceId":{
+                    "type":"integer",
+                    "description":"The choice id, applicable for list-based UDFs",
+                    "format":"int32",
+                    "example":123456
+                 }
+              }
+           },
+           "Workshop":{
+              "required":[
+                 "endTime",
+                 "id",
+                 "name",
+                 "sessionId",
+                 "sessionName",
+                 "startTime"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The workshop's identifier",
+                    "format":"int32",
+                    "example":41234567
+                 },
+                 "name":{
+                    "type":"string",
+                    "description":"Name of the workshop",
+                    "example":"Analytics - Benefits and Dangers"
+                 },
+                 "itemCode":{
+                    "type":"string",
+                    "description":"A short code that is used to reference the workshop",
+                    "example":"A30"
+                 },
+                 "startTime":{
+                    "type":"string",
+                    "description":"When the workshop starts",
+                    "format":"date-time"
+                 },
+                 "endTime":{
+                    "type":"string",
+                    "description":"When the workshop ends",
+                    "format":"date-time"
+                 },
+                 "sessionName":{
+                    "type":"string",
+                    "description":"Name of the timeslot this workshop belongs to",
+                    "example":"Monday, 8:00 a.m. - 9:30 a.m."
+                 },
+                 "sessionId":{
+                    "type":"string",
+                    "description":"The identifier of the timeslot this workshops belongs to",
+                    "example":"849105"
+                 }
+              }
+           },
+           "RegistrantCancellation":{
+              "type":"object",
+              "properties":{
+                 "registrantId":{
+                    "type":"integer",
+                    "description":"The registrant's identifier",
+                    "format":"int32",
+                    "example":12345678
+                 },
+                 "cancellationDate":{
+                    "type":"string",
+                    "description":"The date and time that the registrant was cancelled",
+                    "format":"date-time",
+                    "example":"2018-05-25T04:33:34Z"
+                 }
+              }
+           },
+           "Fee":{
+              "required":[
+                 "displayOrder",
+                 "goodUntil",
+                 "id",
+                 "name",
+                 "price",
+                 "type"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The fee's identifier",
+                    "format":"int32",
+                    "example":41234567
+                 },
+                 "name":{
+                    "type":"string",
+                    "description":"The name of the fee, used to refer to the fee internally",
+                    "example":"Full Conference Package"
+                 },
+                 "prompt":{
+                    "type":"string",
+                    "description":"The prompt of the fee, used to refer to the fee publicly",
+                    "example":"Full Conference Package"
+                 },
+                 "type":{
+                    "type":"string",
+                    "description":"The type of fee. Each registrant is limited to one fee of Registration or Special Event and contain an unlimited number of option fees",
+                    "example":"Registration",
+                    "enum":[
+                       "REGISTRATION",
+                       "OPTION",
+                       "SPECIAL_EVENT",
+                       "EXHIBITOR_BOOTH",
+                       "WORKSHOP",
+                       "MEMBERSHIP",
+                       "SHOPPING_CART"
+                    ]
+                 },
+                 "price":{
+                    "type":"number",
+                    "description":"Price of the fee, in the currency that is set for the associated event, usually dollars",
+                    "example":250
+                 },
+                 "goodUntil":{
+                    "type":"string",
+                    "description":"The date the price of the fee is valid until, after which the fee can no longer be purchased at that price",
+                    "format":"date",
+                    "example":"2027-12-31"
+                 },
+                 "promotionCode":{
+                    "type":"string",
+                    "description":"A code that is used to group similar fees during the registration process"
+                 },
+                 "displayOrder":{
+                    "type":"integer",
+                    "description":"Internal ordering of the fee",
+                    "format":"int32",
+                    "example":2
+                 },
+                 "capacityLimit":{
+                    "type":"integer",
+                    "description":"Maximum amount of tickets that can be sold for the fee.  This limit is shared between all fees of the same registration category",
+                    "format":"int32",
+                    "example":100
+                 },
+                 "description":{
+                    "type":"string",
+                    "description":"A description of the fee",
+                    "example":"Includes the full conference and the pre-conference"
+                 },
+                 "accountCode":{
+                    "type":"string",
+                    "description":"Label used to group fees for accounting purposes",
+                    "example":"42000-10-1400-4180-000"
+                 },
+                 "registrationCategory":{
+                    "type":"string",
+                    "description":"Grouped fees that share the same registration category will all share the same capacity limit",
+                    "example":"Full Conference Package"
+                 },
+                 "badgeDisplay":{
+                    "type":"string",
+                    "description":"A special way to alter how the fee displays when printing badges",
+                    "example":"Main Conference"
+                 },
+                 "membershipRate":{
+                    "type":"boolean"
+                 }
+              }
+           },
+           "BillingInformation":{
+              "required":[
+                 "activityId",
+                 "firmId",
+                 "id"
+              ],
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "description":"The billing contact's identifier",
+                    "format":"int32",
+                    "example":12345678
+                 },
+                 "activityId":{
+                    "type":"integer",
+                    "description":"The event's identifier",
+                    "format":"int32",
+                    "example":10982
+                 },
+                 "firmId":{
+                    "type":"integer",
+                    "description":"The firm's identifier",
+                    "format":"int32",
+                    "example":205
+                 },
+                 "firstName":{
+                    "type":"string",
+                    "description":"The billing contact's first name",
+                    "example":"John"
+                 },
+                 "lastName":{
+                    "type":"string",
+                    "description":"The billing contact's last name",
+                    "example":"Doe"
+                 },
+                 "address1":{
+                    "type":"string",
+                    "description":"The billing contact's address",
+                    "example":"1212 Long St."
+                 },
+                 "address2":{
+                    "type":"string",
+                    "description":"The billing contact's address (cont. 2)",
+                    "example":"Apt. 12"
+                 },
+                 "city":{
+                    "type":"string",
+                    "description":"The billing contact's city",
+                    "example":"Baltimore"
+                 },
+                 "zipCode":{
+                    "type":"string",
+                    "description":"The billing contact's zip code",
+                    "example":"21201"
+                 },
+                 "country":{
+                    "type":"string",
+                    "description":"Country that the billing contact belongs to",
+                    "example":"USA"
+                 },
+                 "phone":{
+                    "type":"string",
+                    "description":"The billing contact's phone number",
+                    "example":"877-883-1786"
+                 },
+                 "fax":{
+                    "type":"string",
+                    "description":"The billing contact's fax number",
+                    "example":"877-883-1786"
+                 },
+                 "email":{
+                    "type":"string",
+                    "description":"The billing contact's email address",
+                    "example":"johndoe@eventrebels.com"
+                 },
+                 "companyName":{
+                    "type":"string",
+                    "description":"The billing contact's company name",
+                    "example":"EventRebels"
+                 },
+                 "title":{
+                    "type":"string",
+                    "description":"The billing contact's title",
+                    "example":"Dr."
+                 },
+                 "department":{
+                    "type":"string",
+                    "description":"The billing contact's department",
+                    "example":"Human Resources"
+                 },
+                 "state":{
+                    "type":"string",
+                    "description":"Text representing the billing contact's state or province",
+                    "example":"MD"
+                 }
+              }
+           },
+           "EventRegistrantDiscountTransaction":{
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "code":{
+                    "type":"string"
+                 },
+                 "amount":{
+                    "type":"string"
+                 },
+                 "appliedLineItemIds":{
+                    "type":"array",
+                    "items":{
+                       "type":"integer",
+                       "format":"int32"
+                    }
+                 }
+              }
+           },
+           "EventRegistrantUDF":{
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "name":{
+                    "type":"string"
+                 },
+                 "prompt":{
+                    "type":"string"
+                 },
+                 "value":{
+                    "type":"string"
+                 }
+              }
+           },
+           "EventRegistrantWorkshop":{
+              "type":"object",
+              "properties":{
+                 "sessionId":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "sessionName":{
+                    "type":"string"
+                 },
+                 "itemCode":{
+                    "type":"string"
+                 },
+                 "name":{
+                    "type":"string"
+                 },
+                 "id":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "startTime":{
+                    "type":"string",
+                    "format":"date-time"
+                 },
+                 "endTime":{
+                    "type":"string",
+                    "format":"date-time"
+                 },
+                 "room":{
+                    "type":"string"
+                 }
+              }
+           },
+           "EventRegistrantTransaction":{
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "billingId":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "transactionType":{
+                    "type":"string"
+                 },
+                 "transactionState":{
+                    "type":"string"
+                 },
+                 "description":{
+                    "type":"string"
+                 },
+                 "paymentMethod":{
+                    "type":"string"
+                 },
+                 "orderNumber":{
+                    "type":"string"
+                 },
+                 "invoiceNumber":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "purchaseOrderNumber":{
+                    "type":"string"
+                 },
+                 "checkNumber":{
+                    "type":"string"
+                 },
+                 "registrationMethod":{
+                    "type":"string"
+                 },
+                 "transactionSource":{
+                    "type":"string"
+                 },
+                 "transactionSourceUser":{
+                    "type":"string"
+                 },
+                 "transactionTime":{
+                    "type":"string"
+                 },
+                 "price":{
+                    "type":"string"
+                 }
+              }
+           },
+           "EventRegistrantTransactionLineItem":{
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "feeItemId":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "feeName":{
+                    "type":"string"
+                 },
+                 "quantity":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "price":{
+                    "type":"string"
+                 },
+                 "paid":{
+                    "type":"boolean"
+                 },
+                 "cancelled":{
+                    "type":"boolean"
+                 },
+                 "registrantId":{
+                    "type":"integer",
+                    "format":"int32"
+                 }
+              }
+           },
+           "Webhook Event: Registration Purchased":{
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "billingId":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "activityId":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "salutation":{
+                    "type":"string"
+                 },
+                 "firstName":{
+                    "type":"string"
+                 },
+                 "middleName":{
+                    "type":"string"
+                 },
+                 "lastName":{
+                    "type":"string"
+                 },
+                 "suffix":{
+                    "type":"string"
+                 },
+                 "pronouns":{
+                    "type":"string"
+                 },
+                 "credentials":{
+                    "type":"string"
+                 },
+                 "nameOnBadge":{
+                    "type":"string"
+                 },
+                 "company":{
+                    "type":"string"
+                 },
+                 "title":{
+                    "type":"string"
+                 },
+                 "department":{
+                    "type":"string"
+                 },
+                 "phone":{
+                    "type":"string"
+                 },
+                 "mobilePhoneNumber":{
+                    "type":"string"
+                 },
+                 "fax":{
+                    "type":"string"
+                 },
+                 "email":{
+                    "type":"string"
+                 },
+                 "address1":{
+                    "type":"string"
+                 },
+                 "address2":{
+                    "type":"string"
+                 },
+                 "city":{
+                    "type":"string"
+                 },
+                 "state":{
+                    "type":"string"
+                 },
+                 "zipCode":{
+                    "type":"string"
+                 },
+                 "country":{
+                    "type":"string"
+                 },
+                 "countryFull":{
+                    "type":"string"
+                 },
+                 "facebookUrl":{
+                    "type":"string"
+                 },
+                 "linkedInUrl":{
+                    "type":"string"
+                 },
+                 "twitterHandle":{
+                    "type":"string"
+                 },
+                 "feeName":{
+                    "type":"string"
+                 },
+                 "feePrice":{
+                    "type":"string"
+                 },
+                 "feeBadgeDisplay":{
+                    "type":"string"
+                 },
+                 "udfData":{
+                    "type":"object",
+                    "additionalProperties":{
+                       "type":"string"
+                    }
+                 },
+                 "udfs":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/EventRegistrantUDF"
+                    }
+                 },
+                 "workshops":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/EventRegistrantWorkshop"
+                    }
+                 },
+                 "purchasedLineItems":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/EventRegistrantTransactionLineItem"
+                    }
+                 },
+                 "discountTransactions":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/EventRegistrantDiscountTransaction"
+                    }
+                 }
+              }
+           },
+           "Webhook Event: Option Purchase":{
+              "type":"object",
+              "properties":{
+                 "activityId":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "registrantId":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "lineItems":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/EventRegistrantTransactionLineItem"
+                    }
+                 },
+                 "transactions":{
+                    "type":"array",
+                    "items":{
+                       "$ref":"#/components/schemas/EventRegistrantTransaction"
+                    }
+                 }
+              }
+           },
+           "Webhook Event: Meeting Created":{
+              "type":"object",
+              "properties":{
+                 "id":{
+                    "type":"integer",
+                    "format":"int32"
+                 },
+                 "name":{
+                    "type":"string"
+                 },
+                 "subTitle":{
+                    "type":"string"
+                 },
+                 "token":{
+                    "type":"string"
+                 },
+                 "dateStart":{
+                    "type":"string",
+                    "format":"date-time"
+                 },
+                 "dateEnd":{
+                    "type":"string",
+                    "format":"date-time"
+                 }
+              }
+           }
+        },
+        "securitySchemes":{
+           "basicAuth":{
+              "type":"http",
+              "scheme":"basic"
+           }
+        }
+     }
+  }
